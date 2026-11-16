@@ -223,7 +223,7 @@ BREATH_PERIOD = 4.2s · SWAY_PERIOD = 5.6s · FIELD_PERIOD = 18–24s
 - **מכשיר** (`floor` / `parallettes` / `rings` / `bar` / `p_bars` / `wall` / `bench`) ו**צד** (`L` / `R`) — שדות של וריאציה כשהם מגדירים אותה.
 
 ### 3.2 כללי אימון והתאוששות לפי דיסציפלינה (`training_rules`)
-ערכי ברירת מחדל שמרניים — **הערכה שלי, לא מחקר**, ניתנים לעריכה בהגדרות. המנוע (אקטיבציות עכשיו, מאמן AI בשלב 2) קורא אותם מטבלה ולא מקוד.
+ערכי ברירת מחדל שמרניים — **הערכה שלי, לא מחקר**. **אושרו כברירת מחדל, וכולם ניתנים לעריכה ב-☰ → אקטיבציות → כללי התאוששות** (לכל דיסציפלינה בנפרד, עם "איפוס לברירת מחדל"). המנוע (אקטיבציות עכשיו, מאמן AI בשלב 2) קורא אותם מטבלה ולא מקוד.
 
 | כלל | Statics | Dynamics |
 |---|---|---|
@@ -286,10 +286,15 @@ BREATH_PERIOD = 4.2s · SWAY_PERIOD = 5.6s · FIELD_PERIOD = 18–24s
 - **מופע יום** (`day_plans`) — היום הקונקרטי שאתה הולך לעשות (יום 1, יום 2, ... יום 37), עותק של התבנית עם יעדים ממשיים. **כאן** נכנסות התאמות: בשלב 2 המאמן AI כותב את `day_plans` הבאים לפי ההתקדמות שדיווחת, עם `adjustments` (מה שונה ולמה). ב-v1 המופעים נוצרים מהתבנית כמו שהיא, ואתה יכול לערוך ידנית.
 - **ביצוע** (`sessions` → `set_logs` → `part_logs`) — מצביע על המופע ועל החלק המתוכנן, כך שתמיד יש "תוכנן ↔ בוצע" זה לצד זה.
 
-**ה-PDF מכיל שלושה חלקים** (פוש, פול, פלאנץ׳ יד אחד). **הנחה שלי ל-seed — צריך אישור שלך (שאלה 1):**
-- **יום A** = פוש (6 בלוקים) + פול (6 בלוקים)
-- **יום B** = פלאנץ׳ יד אחד (4 בלוקים) + פול (6 בלוקים)
-- הרצף: A → B → A → B... (עם ימי מנוחה לפי מה שתגדיר)
+**החלוקה לימים — אתה עושה אותה, לא האפליקציה.** ה-PDF מכיל שלושה סקשנים (פוש, פול, פלאנץ׳ יד אחד), והם נכנסים ל-seed **כ"ספריית סקשנים" בלי חלוקה מראש**. את הימים אתה בונה במסך **ימי התוכנית** (☰ → ימי התוכנית):
+- **יצירת יום** + שם חופשי ("יום כוח", "יום 1"...).
+- **שיוך** סקשנים שלמים או בלוקים/קומבואים בודדים מהתוכנית לכל יום (אותו בלוק יכול להופיע בכמה ימים).
+- **גרירה לשינוי סדר** — של הימים ברצף, ושל הבלוקים בתוך יום (long-press → drag, לפי gestures: מעקב 1:1, spring בשחרור, `selectionAsync` בכל החלפת מקום, `impactAsync(Light)` בשחרור).
+- **ימי מנוחה:** אפשר להוסיף "יום מנוחה" כפריט ברצף (נגרר כמו כל יום).
+- **ברירת מחדל:** כל יום ברצף הוא יום אימון, **בלי ימי מנוחה**.
+- **עד שתבנה ימים:** "אימון היום" מציג מסך ריק עם פעולה אחת — "בנה את ימי התוכנית" (empty state, לא ניחוש).
+- **"אימון היום"** = היום הבא ברצף שבנית, אחרי היום האחרון שהסתיים (יום מנוחה מוצג כמנוחה, עם אפשרות "התאמן בכל זאת"). ההחלפה בנגיעה אחת נשארת — בוחרת כל יום אחר מהרצף בלי לשבור אותו.
+- שינוי ברצף לא משנה ימים שכבר בוצעו (`day_plans` שהסתיימו נשארים כמו שהיו).
 
 **פוש** (סקשן `push`)
 | # | שם בתוכנית | חלקים | סטים | מנוחה |
@@ -331,7 +336,7 @@ BREATH_PERIOD = 4.2s · SWAY_PERIOD = 5.6s · FIELD_PERIOD = 18–24s
 - **SQLite** (`expo-sqlite`) עם migrations ממוספרות. הגדרות ב-`expo-sqlite/kv-store`.
 - **שכבת driver** (`SqlDriver`) — expo-sqlite באפליקציה, **sql.js** (WASM, בלי קומפילציה נייטיב — עובד ב-Windows) בבדיקות. כך כל repository נבדק ב-Jest.
 - סרטונים בתיקיית המסמכים של האפליקציה (`expo-file-system`), ב-DB רק URI + תמונה ממוזערת. העתק אופציונלי ל-Photos (`expo-media-library`).
-- **מבנה מרכזי:** `program → program_days → day_sections (push/pull) → blocks → block_parts` (תבנית), ומעליה `day_plans → plan_blocks → plan_parts` (מופע מותאם), ומתחת `sessions → set_logs → part_logs` (ביצוע). שלוש שכבות נפרדות = המאמן יכול לשנות את העתיד בלי לגעת בעבר ובלי לגעת במה ש-Shawn כתב.
+- **מבנה מרכזי:** `program → sections → blocks → block_parts` (ספריית התוכנית), `program_days → day_items` (החלוקה שלך לימים), ומעליה `day_plans → plan_blocks → plan_parts` (מופע מותאם), ומתחת `sessions → set_logs → part_logs` (ביצוע). שלוש שכבות נפרדות = המאמן יכול לשנות את העתיד בלי לגעת בעבר ובלי לגעת במה ש-Shawn כתב.
 - **מוכן ל-AI:** כל רישום שומר גם **מה תוכנן** (מצביע ל-`plan_parts`) וגם **מה בוצע** (אחיזה, צד, גומייה, שלב, מדדים), עם זמני ISO. כל התאמה לתוכנית נשמרת ב-`plan_adjustments` עם `author` ו-`reason` — כך המאמן יודע מה כבר ניסה.
 
 ### 4.2 טבלאות
@@ -353,9 +358,10 @@ training_rules  discipline PRIMARY KEY, min_rest_h_max_effort, daily_load_cap, a
 
 -- תוכנית: תבנית (מה Shawn כתב)
 programs        id, title, coach ('Shawn Sama'), source_file, imported_at, is_active,
-                sequence_json                                                           -- למשל ["A","B"] + ימי מנוחה
-program_days    id, program_id→programs, key ('A'|'B'|…), position, title_he, title_en NULL
-day_sections    id, day_id→program_days, position, force ('push'|'pull'|'core'), title_he  -- "פוש" / "פול" / "פלאנץ׳ יד אחד"
+                sequence_json                                                           -- סדר הימים שבנית, כולל ימי מנוחה
+program_days    id, program_id→programs, position, title (שם שאתה נותן), is_rest (0/1), created_by ('user')
+day_items       id, day_id→program_days, position, section_id NULL, block_id NULL       -- שיוך סקשן שלם או בלוק בודד; גרירה = עדכון position
+sections        id, program_id→programs, position, force ('push'|'pull'|'core'), title_he  -- "פוש" / "פול" / "פלאנץ׳ יד אחד" — ספרייה, לא יום
 blocks          id, section_id→day_sections, position, name_he, name_en NULL, summary_he, summary_en NULL,
                 sets, rest_kind ('feel'|'seconds'), rest_seconds NULL, instructions_he
 block_parts     id, block_id→blocks, position, name_he, name_en NULL, variation_id NULL, stage_id NULL,
@@ -415,7 +421,7 @@ coach_messages  id, role ('user'|'coach'), text, created_at, context_snapshot_js
 ```
 
 ### 4.3 הגדרות (kv-store)
-`language` (`he` ברירת מחדל) · `haptics` · `sounds` · `voice` · `reduceMotionOverride` · `program.restDays` · `reminders` (ימים + שעה) · `combo.toggles` (holdTimer, restTimer, voice, camera — זוכר את הבחירה האחרונה) · `activation.*` (כל הפרמטרים — טבלה 6.6).
+`language` (`he` ברירת מחדל) · `haptics` · `sounds` · `voice` · `reduceMotionOverride` · `reminders` (ימים + שעה) · `combo.toggles` (holdTimer, restTimer, voice, camera — זוכר את הבחירה האחרונה) · `activation.*` (כל הפרמטרים — טבלה 6.6).
 
 ### 4.4 `CoachContextV1` — הנתונים למאמן העתידי
 `buildCoachContext({ since }): CoachContextV1` מחזיר: גרסת schema · פרופיל (רמה התחלתית + שלב נוכחי לכל וריאציה) · **רצף הימים**: לכל `day_plan` — מה תוכנן, מה בוצע לכל חלק, ההרגשה וההערות, וההתאמות שנעשו · עומס מצטבר לפי דיסציפלינה וכוח · אירועי שלב · אקטיבציות (בנפרד) · ניתוחים · `training_rules`. **החוזה ההפוך** (מה המאמן מחזיר בשלב 2): `CoachPlanV1 = { day_plans: [...], adjustments: [{ field, from, to, reason }] }` → נכתב ל-`day_plans` עם `origin: 'coach'` ומוצג לך לאישור לפני שהוא נכנס לתוקף. ב-v1: ייצוא JSON שאפשר להדביק בצ׳אט.
@@ -442,12 +448,15 @@ Splash (סטטי, דמות בפלאנץ׳) ─► כניסה "הפרס" ─► N
 הרמה שלי            baseline                  ייבוא Instagram export → הערכה
 ייבוא תוכנית         program/import → program/review
 מאמן (Placeholder)   coach                     שלב 2
-הגדרות               settings                  formSheet מכפתור בכותרת
+☰ תפריט             menu                      כפתור ☰ בכותרת כל טאב → גיליון: הגדרות · ימי התוכנית · אקטיבציות · הרמה שלי · מאמן · גיבוי
+  ├─ הגדרות         settings                  שפה, הפטיקה, צלילים, קול, תזכורות, הפחתת תנועה
+  ├─ ימי התוכנית    program/days              בניית ימים, שיוך, גרירה, ימי מנוחה
+  └─ אקטיבציות      settings/activation       כל הפרמטרים של 6.6 + כללי ההתאוששות של 3.2
 ```
 
 | מסך | תוכן | פעולה ראשית |
 |---|---|---|
-| **היום** | **"יום 12 · A"** — היום הבא ברצף, עם שני הסקשנים (Push + Pull) ואייקון חי גדול; תווית אם המאמן/אתה שיניתם משהו מהתבנית; שורת "החלף יום" (נגיעה אחת); האקטיבציה הבאה ("בעוד ~40 דק׳"); מד נושם של היום (אימונים + אקטיבציות); "המשך אימון" אם יש סשן פתוח | "התחל אימון" |
+| **היום** | **"יום 12 · {השם שנתת}"** — היום הבא ברצף שבנית (או "יום מנוחה"), עם הבלוקים ששייכת אליו ואייקון חי גדול; תווית אם המאמן/אתה שיניתם משהו מהתבנית; שורת "החלף יום" (נגיעה אחת); האקטיבציה הבאה ("בעוד ~40 דק׳"); מד נושם של היום (אימונים + אקטיבציות); "המשך אימון" אם יש סשן פתוח | "התחל אימון" |
 | **אימון חי** | **למעלה:** תיאור קצר וברור של הקומבו (למשל *"6 סטים: מקס פוש-אפ ← מקס פרסים ← מקס החזקה"*). **ארבעה מתגים נפרדים:** טיימר החזקה · טיימר מנוחה · קול · מצלמה. במרכז: החלק הנוכחי, הטיימר/מונה הגדול, אחיזה ומכשיר. למטה: "סיימתי" / רישום חזרות. הפטיקה+צלילים: מתג משלהם | "סיימתי חלק / סט" |
 | **סיכום אימון** | איך הרגשת (1–5) · השלב שהגעת אליו בכל וריאציה שאומנה · הערות · כל הסטים (קומבו = סט) עם חזרות/שניות לכל חלק — ממולא מראש מהרישומים, ניתן לעריכה | "שמור" |
 | **עץ מיומנויות** | 4 קטגוריות; בכל אחת — מיומנויות עם אייקון חי, שלב נוכחי, דרגת קושי, ו"כמה נשאר לשלב הבא" (טבעת) | פתיחה |
@@ -481,7 +490,7 @@ activationStats(history, today)            → רצפים וסטטיסטיקה (
 - **הפתעה:** לכל אקטיבציה offset אקראי בטווח `±jitterMin` (ברירת מחדל ±35 דק׳), עם מרווח מינימלי `minGapMin` (ברירת מחדל 75 דק׳) בין שתיים — כך זה לא מרגיש כמו שעון מעורר, אבל גם לא מגיע פעמיים ברצף.
 - **שעות שקטות:** רשימת חלונות (למשל 13:00–14:00, או "ימי שישי אחרי 15:00") — אף פעם לא יורה בתוכם. מצב "אל תפריע" של iOS מכובד ממילא.
 - **סביב אימון מלא:** אין אקטיבציה `bufferBeforeMin` (ברירת מחדל 90) לפני אימון מתוכנן ו-`bufferAfterMin` (ברירת מחדל 120) אחריו. "אימון מתוכנן" = תזכורת האימון של היום / `day_plans.planned_date`; "אחרי" = `sessions.ended_at` אמיתי. התחלת אימון → ביטול כל האקטיבציות בחלון החסום (`cancelled`), וסיום אימון → תזמון מחדש.
-- **ימי מנוחה:** אפשרות `restDayMode` — רגיל / רק Statics קלים / כבוי.
+- **ימי מנוחה** (אלה שסימנת ברצף): אפשרות `restDayMode` — רגיל / רק Statics קלים / כבוי.
 - **תקרה יומית:** `maxPerDay` (ברירת מחדל 5).
 - **מגבלת iOS של 64 התראות:** מתזמנים מתגלגל — רק `horizon` הבאות (12), משלימים בכל פתיחה, בכל תגובה ובכל שינוי הגדרה. בדיקה: לעולם לא יותר מ-12 ממתינות.
 
@@ -519,7 +528,8 @@ activationStats(history, today)            → רצפים וסטטיסטיקה (
 - **סטטיסטיקות:** אחוז ביצוע (בוצע / (בוצע + דילגתי)) לשבוע ולחודש · זמן תגובה ממוצע · סה״כ שניות החזקה וחזרות לפי מיומנות · התפלגות לפי שעה ביום (מתי אתה הכי נענה — ומשם הצעה לכוון את שעות הפעילות) · התפלגות static/dynamic ו-push/pull.
 - **מוזן לאותו מודל:** הביצוע נשמר ב-`part_logs`, נספר בעומס (`load_units`), ויכול לייצר `stage_events` עם `source: 'activation'` (למשל החזקה מעל יעד השלב → הצעה לעלות שלב). כך אקטיבציות משפיעות על האימון המלא הבא ועל האקטיבציות הבאות.
 
-### 6.6 הגדרות (הכל ב-Settings → אקטיבציות)
+### 6.6 הגדרות (☰ → אקטיבציות) — הכל ניתן לעריכה
+ברירות המחדל אושרו. **כל** פרמטר בטבלה ניתן לעריכה, וגם כללי ההתאוששות של 3.2 (לכל דיסציפלינה) — באותו מסך, בקבוצה "כללי התאוששות". כל שינוי → `planWindow` מחדש מיד.
 | פרמטר | ברירת מחדל |
 |---|---|
 | `enabled` | כבוי עד שתפעיל (בהפעלה: בקשת הרשאת התראות) |
@@ -534,9 +544,10 @@ activationStats(history, today)            → רצפים וסטטיסטיקה (
 | `intensity` | 60–75% |
 | `expireMin` | 120 |
 | `pool` | אוטומטי (כל המיומנויות) / בחירה ידנית |
+| כללי התאוששות (3.2) | מנוחה מינימלית אחרי מקס · תקרת עומס יומית · עצימות · מספר ניסיונות — לכל אחת מ-Statics / Dynamics |
 
 ## 7. פענוח התוכנית
-- **v1 (בלי שרת):** אין פענוח PDF אמין במכשיר. לכן: בוחרים PDF → הקובץ מוצג לצד **עורך מובנה** (אימונים → בלוקים → חלקים) שממולא מראש מתבנית Shawn Sama (חלק 3.5). אתה מתקן/מוסיף ידנית → `validateProgram` → שמירה. התוכנית הנוכחית מגיעה כ-seed.
+- **v1 (בלי שרת):** אין פענוח PDF אמין במכשיר. לכן: בוחרים PDF → הקובץ מוצג לצד **עורך מובנה** (ימים → סקשנים → בלוקים → חלקים; החלוקה לימים נעשית במסך ימי התוכנית) שממולא מראש מתבנית Shawn Sama (חלק 3.5). אתה מתקן/מוסיף ידנית → `validateProgram` → שמירה. התוכנית הנוכחית מגיעה כ-seed.
 - **שלב 2 (שרת):** שליחת ה-PDF לשרת שקורא אותו ויזואלית עם Claude ומחזיר JSON לפי אותה schema. (כבר ראינו שחילוץ טקסט רגיל שובר את הטבלאות בעברית.) המפתח לעולם לא באפליקציה. אותו מסך סקירה.
 
 ## 8. וידאו, השוואה ואתלטים
@@ -565,26 +576,29 @@ interface PoseDetector { detect(videoUri: string, frameMs: number): Promise<Join
 4. כל סרטון נכנס לספרייה עם `source: 'instagram_export'` ואותו כלי ניתוח (8.1): סרגל החזקה + סימון מפרקים.
 5. **מסך "הרמה שלי":** לכל מיומנות — השלב הגבוה ביותר שמופיע בסרטונים, ההחזקה הארוכה ביותר, ו**ציר זמן** של ההתקדמות שלך לפי תאריכי הפוסטים. נשמר ב-`baseline` עם הסרטונים כראיה, ומשמש כנקודת ההתחלה לשלבים, לאקטיבציות ולמאמן.
 
-**אפשרות מהירה עכשיו (לפני שיש אפליקציה):** אם תשים את ה-export ב-`docs/source/instagram/`, אני יכול לחלץ פריימים עם ffmpeg ולתת לך הערכת רמה ראשונה כבר בשלב התכנון — תיכנס ל-seed כ-`baseline` עם `is_estimate = 1`. ⚠️ ה-export מכיל גם הודעות ומידע אישי אם תבחר "All information" — לבחור רק Content. ואם תשים אותו ב-repo, להחליט אם להוסיף ל-`.gitignore` (זה תוכן אישי שיעלה לגיטהאב).
+**אפשרות מהירה עכשיו (לפני שיש אפליקציה):** אם תשים את ה-export ב-`docs/source/instagram/`, אני יכול לחלץ פריימים עם ffmpeg ולתת לך הערכת רמה ראשונה כבר בשלב התכנון — תיכנס ל-seed כ-`baseline` עם `is_estimate = 1`. ⚠️ ה-export מכיל גם הודעות ומידע אישי אם תבחר "All information" — לבחור רק Content. **החלטה שלך: ה-export נכנס ל-repo ונדחף לגיטהאב (לא ב-`.gitignore`)**, כמו ה-PDF והסרטונים. לפני כל push: בדיקת גודל — כל קובץ מעל 100MB (המגבלה של GitHub) מדווח לך **לפני** הדחיפה, ולא נדחף עד שתחליט.
 
 ### 8.4 אתלטי רפרנס — הערכות מהפרופילים הציבוריים
 **שיטה:** דרך Claude in Chrome — ה-Chrome המחובר שלך, צפייה בפרופילים ובסרטונים הציבוריים, והערכה לכל מיומנות: השלב הגבוה ביותר שנראה + זמן החזקה מוערך (ספירת שניות בסרטון). **לא מורידים ולא שומרים את הסרטונים שלהם**; שומרים רק את ההערכה + לינק לפוסט.
 
-**סטטוס כרגע: ❌ התוסף לא מחובר** ("Browser extension is not connected"). מה צריך (חלק 15).
+**סטטוס (16.11.2026): ✅ Chrome חובר**, עברתי על 7 הפרופילים. **מגבלה:** צילומי המסך מ-Chrome נכשלו שוב ושוב (`Page.captureScreenshot timed out after 30000ms`), ולכן הצלחתי לדגום פריימים רק מחלק מהסרטונים. ניתחתי סרטון לעומק רק כשהפריימים עבדו; בשאר המקרים — רק כיתובים וביו. **שום מספר לא הומצא**: איפה שלא ראיתי, כתוב "לא נמדד".
 
-**כל מספר של אתלט נשמר כך:** `is_estimate = 1` · `source_url` = הלינק לפוסט/ריל הספציפי · `source_note` (למשל "נספר מהסרטון, ±1 שנ׳, ייתכן חיתוך עריכה") · `observed_at`. מוצג באפליקציה תמיד עם תווית **"הערכה"** ולינק למקור.
+**כל מספר של אתלט נשמר כך:** `is_estimate = 1` · `source_url` = הלינק לפוסט/ריל הספציפי · `source_note` · `observed_at`. מוצג באפליקציה תמיד עם תווית **"הערכה"** ולינק למקור.
 
-| אתלט | Handle | מוקד (לפי מה שכתבת + חיפוש) | הערכות |
-|---|---|---|---|
-| Valentin Blanc | @valentin_otz | כוח פלאנץ׳ חריג: וריאציות פלאנץ׳, פרס לעמידת ידיים | ⏳ מחכה ל-Chrome |
-| Lee-Van | @leevan_ns | — | ⏳ |
-| Iliesse Belasri | @iliesse_ns | — | ⏳ |
-| Rayan "Onizuka" | @onizuka_ns | אלוף עולם 2026 (לפי מה שכתבת) — לא מצאתי אישור ברשת | ⏳ |
-| Nathan Bosech | @nathan.bosech | — | ⏳ |
-| Ramazan | @calisrama | — | ⏳ |
-| Idan Porat | @idan_.porat | אתלט פלאנץ׳ ישראלי | ⏳ |
+| אתלט | Handle | מה ראיתי (ביו + כיתובים) | הערכה לכל מיומנות (seed, `is_estimate=1`) | מקור |
+|---|---|---|---|---|
+| Valentin Blanc | @valentin_otz | 126K עוקבים, "14 years performing & teaching". פלאנץ׳ ומעברים | **Full planche על פרלטס ≈ 31 שנ׳** — פריימים ב-12/24/36 שנ׳ מראים פלאנץ׳ מלא רציף, והכיתוב "Premier 31 554" מתאים ל-31.55 שנ׳. אחריו **פרס לעמידת ידיים** (פריימים 48/60 שנ׳) | [reel DLuoLOmIBuv](https://www.instagram.com/valentin_otz/reel/DLuoLOmIBuv/) |
+| | | | כיתוב: "25 555 … I will reach 30" — כנראה החזקה של ≈25 שנ׳ עם יעד 30 (לא נצפה — **לא נכנס ל-seed**) | [reel DKmqN6AoPnW](https://www.instagram.com/valentin_otz/reel/DKmqN6AoPnW/) |
+| Lee-Van | @leevan_ns | 268K, Calisthenics Coach, אתלט Thenx | **Full planche על הרצפה, אחיזה רחבה (קרוב למלטיז)** — החזקה קצרה, ≈2 שנ׳ נראו בפריימים (80–92% של קליפ 15 שנ׳). זמן מקסימלי — לא נמדד | [reel DfkqTvVK0Ve](https://www.instagram.com/leevan_ns/reel/DfkqTvVK0Ve/) |
+| Iliesse Belasri | @iliesse_ns | אתלט Cali Athletics | **Two-finger planche** — לפי כיתוב הפוסט ("Two Fingers planche at the top of the world"); תמונה, בלי זמן. הסרטונים — הפריימים נכשלו | [post C_TX1ZGI-Gu](https://www.instagram.com/iliesse_ns/p/C_TX1ZGI-Gu/) |
+| Rayan "Onizuka" | @onizuka_ns | 141K. **בביו: "Professional athlete · World champion 2026"** — מאשר את מה שכתבת (מקור: הביו שלו, לא ארגון רשמי) | לא נמדד (הסרטון שנדגם הוא קליפ אווירה מתחרות) | [profile](https://www.instagram.com/onizuka_ns/) |
+| Nathan Bosech | @nathan.bosech | 221K, "THENX athlete". תוכן freestyle/dynamics (כיתוב: "Easy Van Gelder tutorial") | **Dynamics** — Van Gelder (לפי כיתוב). אין מספרים | [post DbtVw1rFyX2](https://www.instagram.com/nathan.bosech/p/DbtVw1rFyX2/) |
+| Ramazan | @calisrama | 169K, "Pro Calisthenics Athlete · 9 Years", מלמד פלאנץ׳. מעברים על מוט ("How hard do you think transitions like this are on the bar") | לא נמדד — בפריימים של הריל רק תקריב על ידיים על פרלטס, לא הצלחתי לזהות את המיומנות | [reel Dfo2CYTN4-X](https://www.instagram.com/calisrama/reel/Dfo2CYTN4-X/) |
+| Idan Porat | @idan_.porat | 1.3K, "8 שנות ניסיון · מהטובים בעולם בפלאנץ׳", תוכן הדרכה על פלאנץ׳ | לא נמדד | [profile](https://www.instagram.com/idan_.porat/) |
 
-- עד שיהיו הערכות, ב-seed אין מספר לאתלט ספציפי. **רפרנס עולמי כללי** (מתויג "רשימת שיאים ציבורית — לא מאומת"): CaliBase — front lever 62 שנ׳ (Michal Urbanik), פלאנץ׳ על פרלטס 47 שנ׳ (Michele Esposito).
+**השלמה:** כשצילומי המסך יעבדו (כנראה צריך שחלון ה-Chrome יהיה גלוי ולא ממוזער), אפשר לעבור שוב ולמדוד עוד. ובאפליקציה עצמה — אותו כלי ניתוח (8.1) על קליפ רפרנס משלים כל מספר חסר, עם אותה תווית "הערכה".
+
+- **ב-seed:** רק ההערכות המסומנות למעלה (Valentin full planche ≈31 שנ׳; Lee-Van ו-Iliesse — שלב בלבד, בלי זמן). **רפרנס עולמי כללי** (מתויג "רשימת שיאים ציבורית — לא מאומת"): CaliBase — front lever 62 שנ׳ (Michal Urbanik), פלאנץ׳ על פרלטס 47 שנ׳ (Michele Esposito).
 - **"% מהדרך"** מול אתלט = המיקום שלך (שלב + החזקה) מול ההערכה שלו באותה וריאציה.
 
 ---
@@ -670,7 +684,7 @@ src/
 ### משימה 2: DB — driver, migrations, קטלוג, תוכנית
 **קבצים:** `src/db/{driver,expo-driver}.ts`, `migrations/001_init.ts`, `seed/{catalog,shawn-sama,athletes}.ts`, `src/domain/{types,program-schema}.ts`
 **מייצר:** `interface SqlDriver { run; all<T>; get<T>; tx }`, `migrate(d)`, `seedIfEmpty(d)`, `validateProgram(json): Result<ProgramInput>`.
-- [ ] בדיקה: `validateProgram(shawnSama)` מצליח; 2 ימים (A, B), בכל יום סקשן push וסקשן pull; פוש #1 = 3 חלקים ו-`kind === 'combo'`; פול #4 = `{target_kind:'reps_range', target_value:6, target_max:8, rest_seconds:40, hold_at_end_s:…}`; פוש #3 `grip === 'supinated'`; פוש #2 = `planche-press-wide` עם `target_kind:'max_hold_in_transition'`
+- [ ] בדיקה: `validateProgram(shawnSama)` מצליח; 3 סקשנים (פוש 6, פול 6, פלאנץ׳ יד אחד 4) **ו-0 ימים** (החלוקה שלך); פוש #1 = 3 חלקים ו-`kind === 'combo'`; פול #4 = `{target_kind:'reps_range', target_value:6, target_max:8, rest_seconds:40, hold_at_end_s:…}`; פוש #3 `grip === 'supinated'`; פוש #2 = `planche-press-wide` עם `target_kind:'max_hold_in_transition'`
 - [ ] בדיקה: לכל וריאציה יש `discipline` ו-`force`; קיימות Bench Dips, Side Flip, Iron Cross, Bar Spin 360/540, Shrimp Flip; `training_rules` עם שורה ל-static ול-dynamic
 - [ ] בדיקה: נדחה `sets: 0`, `grip: 'x'`, בלוק בלי חלקים
 - [ ] בדיקה: `seedIfEmpty` פעמיים → אותה כמות שורות
@@ -679,8 +693,10 @@ src/
 
 ### משימה 3: Repositories + לוגיקת דומיין
 **קבצים:** `src/db/repos/*.ts`, `src/domain/{day-sequence,load,streak,progress-math}.ts`
-**מייצר:** `nextDayPlan()` (יוצר `day_plans` מהתבנית לפי `sequence_json`), `editDayPlan(id, change)` (→ `plan_adjustments`), `loadUnits(partLog)`, `recentLoad(skillId, hours)`, `startSession(kind, ref)`, `logPart(input)`, `completeSet(...)`, `endSession(id, summary)`, `getOpenSession()`, `currentStage(variationId)`, `progressToNext(variationId): {ratio, remaining, unit}`, `computeStreak(dates, today)`, `progressRatio(cur, target)` (0..1 תמיד).
-- [ ] בדיקה: רצף A → B → A לפי ה-`day_plan` האחרון שהסתיים; דילוג/החלפה לא שוברים את הרצף; ימי מנוחה נספרים
+**מייצר:** `createDay(title)`, `assignToDay(dayId, {sectionId}|{blockId})`, `reorder(kind, ids)`, `setRest(dayId, bool)`, `nextDayPlan()` (יוצר `day_plans` לפי הרצף שבנית), `editDayPlan(id, change)` (→ `plan_adjustments`), `loadUnits(partLog)`, `recentLoad(skillId, hours)`, `startSession(kind, ref)`, `logPart(input)`, `completeSet(...)`, `endSession(id, summary)`, `getOpenSession()`, `currentStage(variationId)`, `progressToNext(variationId): {ratio, remaining, unit}`, `computeStreak(dates, today)`, `progressRatio(cur, target)` (0..1 תמיד).
+- [ ] בדיקה: בלי ימים → `nextDayPlan() === null`; ברירת מחדל `is_rest = 0`
+- [ ] בדיקה: רצף [יום 1, יום 2, מנוחה] → אחרי יום 2 מגיע מנוחה ואז יום 1; החלפה בנגיעה לא שוברת את הרצף
+- [ ] בדיקה: `reorder` משנה רק `position`; שינוי רצף לא משנה `day_plans` שהסתיימו
 - [ ] בדיקה: עריכת `day_plan` לא משנה את התבנית ונרשמת ב-`plan_adjustments`; כל `part_log` מצביע ל-`plan_part` שלו
 - [ ] בדיקה ⓡ3: סשן פתוח מוחזר עם כל ה-part_logs שלו
 - [ ] בדיקה: `progressRatio(0,0) === 0`; `computeStreak` עם פער מתאפס
@@ -699,7 +715,7 @@ src/
 **קבצים:** `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx`, מסכי שורש ריקים, `src/entrance/Entrance.tsx`, `src/app/settings.tsx`, `assets/splash` (הדמות בפלאנץ׳)
 - [ ] root: `GestureHandlerRootView`, `ClockProvider`, DB, i18n, `SplashScreen.preventAutoHideAsync` עד שה-DB מוכן
 - [ ] כניסה לפי טבלה 2.6; דילוג בנגיעה; הפחתת תנועה = crossfade
-- [ ] NativeTabs (4 טאבים, SF Symbols, בלי אנימציית מעבר); הגדרות ב-formSheet; החלפת שפה + טעינה מחדש (סשן פתוח נשמר קודם)
+- [ ] NativeTabs (4 טאבים, SF Symbols, בלי אנימציית מעבר); כפתור ☰ בכותרת → תפריט ב-formSheet (הגדרות, ימי התוכנית, אקטיבציות, הרמה שלי, מאמן, גיבוי); החלפת שפה + טעינה מחדש (סשן פתוח נשמר קודם)
 - [ ] על המכשיר בשתי השפות: הפריים הראשון של הכניסה זהה ל-splash; הפריסה מתהפכת, הדמויות לא
 - [ ] commit `feat(nav): press entrance, native tabs, settings`
 
@@ -760,6 +776,16 @@ src/
 - [ ] על המכשיר: יום מלא עם אקטיבציות אמיתיות; מדידת זמן מהתראה לשמירה ≤ 10 שנ׳
 - [ ] commit `feat(activation): notifications, 10-second log, stats screen, reminders`
 
+### משימה 10ג: תפריט ☰ + מסך ימי התוכנית
+**קבצים:** `src/app/menu.tsx`, `src/app/program/days.tsx`, `src/components/program/{DayList,DayEditor,DraggableRow}.tsx`
+**צורך:** משימה 3.
+- [ ] כפתור ☰ בכותרת כל טאב → תפריט (formSheet)
+- [ ] ימי התוכנית: יצירה, שם, שיוך סקשן/בלוק, יום מנוחה, מחיקה (עם אישור)
+- [ ] גרירה לשינוי סדר (Gesture Handler + Reanimated, מעקב 1:1, spring בשחרור, הפטיקה בכל החלפת מקום); הפחתת תנועה = בלי spring, עדיין גריר
+- [ ] empty state ב"היום" כשאין ימים → "בנה את ימי התוכנית"
+- [ ] ⓡ break-ui: 30 ימים, שם יום ארוך בעברית, יום בלי בלוקים
+- [ ] commit `feat(program): menu and program days builder`
+
 ### משימה 11: ייבוא תוכנית (v1 ידני)
 **קבצים:** `src/app/program/{import,review}.tsx`
 - [ ] בחירת PDF → תצוגה + עורך מובנה ממולא מראש → `validateProgram` → שמירה
@@ -800,19 +826,12 @@ src/
 ### משימה 14: סקירה סופית
 - [ ] `improve-animations` על כל התנועה (במקום review-animations שלא מותקן)
 - [ ] break-ui על מסכי היום, האימון והעץ
-- [ ] סבב מלא על ה-iPhone: יום A שלם (Push + Pull) עם כל ארבעת המתגים, אקטיבציה אמיתית, החלפת שפה
+- [ ] סבב מלא על ה-iPhone: יום שבנית בעצמך (Push + Pull) מתחילתו ועד סופו עם כל ארבעת המתגים, אקטיבציה אמיתית, החלפת שפה
 - [ ] סקירת branch מלאה (subagent-driven) → commit
 
 ---
 
 ## 15. שאלות פתוחות ומה צריך ממך
-1. **חלוקת ה-PDF לימים** — ההנחה שלי: יום A = פוש + פול, יום B = פלאנץ׳ יד אחד + פול, לסירוגין. נכון? וכמה ימי מנוחה ביניהם?
-2. **Claude in Chrome לא מחובר.** כדי שאעריך את האתלטים:
-   1. להתקין את התוסף מ-https://claude.ai/chrome ב-Chrome.
-   2. להתחבר בתוסף לאותו חשבון claude.ai של Claude Code.
-   3. להפעיל מחדש את Chrome (בהתקנה ראשונה).
-   4. לוודא שאתה מחובר לאינסטגרם באותו Chrome (אני לא מקליד סיסמאות).
-   5. להריץ `/chrome` ב-Claude Code כדי לחבר, ולאשר לתוסף גישה ל-instagram.com כשהוא מבקש.
-   6. להגיד לי "Chrome מחובר" — ואז אעבור על 7 הפרופילים ואמלא את טבלה 8.4.
-3. **ה-export של אינסטגרם** — לבקש אותו עכשיו (8.3) ולשים ב-`docs/source/instagram/` להערכה ראשונה? ואם כן — ב-`.gitignore` או לא (זה תוכן אישי)?
-4. **ערכי ברירת המחדל של האקטיבציות** (טבלה 6.6) וכללי ההתאוששות (3.2) — מתאימים, או שיש לך מספרים משלך?
+1. **Instagram export** — כשיגיע: לשים ב-`docs/source/instagram/` ולהגיד לי. אבדוק גדלים (מעל 100MB → אדווח לפני push), אדחוף לגיטהאב, ואחלץ פריימים להערכת רמה ראשונה.
+2. **צילומי מסך ב-Chrome** — אם תרצה שאשלים את מדידות האתלטים: להשאיר את חלון ה-Chrome פתוח וגלוי (לא ממוזער) בזמן שאני עובד, ולהגיד לי לנסות שוב.
+3. **אישור התוכנית** — אחרי זה מתחילים במשימה 1 (subagent-driven).
